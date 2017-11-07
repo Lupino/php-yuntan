@@ -8,7 +8,7 @@ class Coin extends Gateway {
   public $bucket = '';
 
   function __construct($host, $key = '', $secret = '', $bucket = '') {
-    parent::__construct($host, $key, $secret);
+    parent::__construct($host, $key, $secret, true);
     if ($bucket) {
       $this -> valid($bucket);
       $this -> bucket = $bucket;
@@ -17,26 +17,14 @@ class Coin extends Gateway {
 
   function get_score($name) {
     $this -> valid($name);
-    $path = "/api/coins/{$this->bucket}{$name}/score/";
-    $headers = $this -> get_headers(true, ['sign_path' => $path]);
-    $req = Requests::get("{$this -> host}{$path}", $headers);
-    if ($req -> status_code == 200) {
-      $rsp = json_decode($req -> body, true);
-      return $rsp['score'];
-    }
-    $this -> errorResponse($req);
+    $pathname = "/api/coins/{$this->bucket}{$name}/score/";
+    return $this -> requestJSON($pathname);
   }
 
   function get_coin_list($name, $from = 0, $size = 10) {
     $this -> valid($name);
-    $path = "/api/coins/{$this->bucket}{$name}/";
-    $headers = $this -> get_headers(true, ['from' => $from, 'size' => $size, "sign_path" => $path]);
-    $req = Requests::get("{$this -> host}{$path}?from={$from}&size={$size}", $headers);
-    if ($req -> status_code == 200) {
-      $rsp = json_decode($req -> body, true);
-      return $rsp;
-    }
-    $this -> errorResponse($req);
+    $pathname = "/api/coins/{$this->bucket}{$name}/";
+    return $this -> requestJSON($pathname, Requests::GET, ["from" => $from, "size" => $size]);
   }
 
   function save_coin($name, $score = 0, $desc = '', $type=self::COIN_TYPE_INCR, $created_at = 0) {
@@ -48,16 +36,8 @@ class Coin extends Gateway {
       "created_at" => $created_at,
     ];
 
-    $path = "/api/coins/{$this->bucket}{$name}/";
-    $params = array_copy($coin);
-    $params["sign_path"] = $path;
-    $headers = $this -> get_headers(true, $params);
-    $req = Requests::post("{$this -> host}{$path}", $headers, $coin);
-    if ($req -> status_code == 200) {
-      $rsp = json_decode($req -> body, true);
-      return $rsp['score'];
-    }
-    $this -> errorResponse($req);
+    $pathname = "/api/coins/{$this->bucket}{$name}/";
+    return $this -> requestJSON($pathname, Requests::POST, $coin);
   }
 
   protected function valid($name) {

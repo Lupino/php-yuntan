@@ -3,14 +3,16 @@
 namespace Yuntan\Service;
 
 class Gateway {
-  public $host = 'https://gw.huabot.com';
-  public $key = '';
-  public $secret = '';
+  private $host = 'https://gw.huabot.com';
+  private $key = '';
+  private $secret = '';
+  private $secure = '';
 
-  function __construct($host, $key = '', $secret = '') {
+  function __construct($host, $key = '', $secret = '', $secure = false) {
     $this -> host = $host;
     $this -> key = $key;
     $this -> secret = $secret;
+    $this -> secure = $secure;
   }
 
   protected function signParams($params = array()) {
@@ -24,7 +26,6 @@ class Gateway {
     return strtoupper(hash_hmac('sha256', $sign_data, $this -> secret));
   }
 
-
   protected function get_headers($sign = false, $params=array()) {
     $now = time();
     if ($sign) {
@@ -32,18 +33,52 @@ class Gateway {
       $params['timestamp'] = $now;
       $sign = $this -> signParams($params);
       return [
-        "User-Agent" => "dispatch-php-1.0.0",
+        "User-Agent" => "yuntan-php-1.0.0",
         "X-REQUEST-KEY"  => $this -> key,
         "X-REQUEST-SIGNATURE" => $sign,
         "X-REQUEST-TIME" => $now,
       ];
     } else {
       return [
-        "User-Agent" => "dispatch-php-1.0.0",
+        "User-Agent" => "yuntan-php-1.0.0",
         "X-REQUEST-KEY"  => $this -> key,
         "X-REQUEST-TIME" => $now,
       ];
     }
+  }
+
+
+  protected function request($pathname, $method=Requests::GET, $data=null) {
+    $params = ["pathname" => $pathname];
+    if ($data) {
+      foreach($data as $key => $value) {
+        $params[$key] = $value;
+      }
+    }
+
+    $url = "{$this -> host}{$pathname}";
+    $secure = $this -> secure;
+    if ($method == Requests::GET) {
+      if ($data) {
+        $data = urlencode($data);
+        $url = "{$url}?{$data}";
+        $data = null;
+      }
+    } else {
+      $secure = true;
+    }
+
+    $headers = $this -> get_headers($secure, $params);
+
+		return Requests::request($url, $headers, $data, $method);
+  }
+
+  protected function requestJSON($pathname, $method=Requests::GET, $data=null) {
+    $req = $this -> request($pathname, $method, $data);
+    if ($req -> status_code == 200) {
+      return json_decode($req -> body, true);
+    }
+    $this -> errorResponse($req);
   }
 
   protected function errorResponse($req) {
@@ -63,16 +98,17 @@ class Gateway {
     return $str;
   }
 
-  public function signature_secret($sign_path, $length = 16) {
+  public function signature_secret($method, $pathname, $length = 16) {
     $nonce = $this -> create_nonce($length);
     $timestamp = time();
 
-    $sign = strtoupper(hash_hmac('sha256', "{$this -> secret}{$sign_path}{$timestamp}", $nonce));
+    $sign = strtoupper(hash_hmac('sha256', "{$this -> secret}{$method}{$pathname}{$timestamp}", $nonce));
 
     return [
       "secret" => $sign,
       "timestamp" => $timestamp,
       "nonce" => $nonce,
+      "method" => $method,
     ];
   }
 }

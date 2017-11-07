@@ -2,6 +2,9 @@
 namespace Yuntan\Service;
 
 class BaseShare extends Gateway {
+  function __construct($host, $key = '', $secret = '', $bucket = '') {
+    parent::__construct($host, $key, $secret, true);
+  }
   function create_share($name, $share_name) {
     $this -> valid($name);
     $this -> valid($share_name);
@@ -9,15 +12,8 @@ class BaseShare extends Gateway {
       "name"      => $name,
       "sharename" => $share_name,
     ];
-
-    $params = array_copy($share);
-    $params["sign_path"] = "/api/shares/";
-    $headers = $this -> get_headers(true, $params);
-    $req = Requests::post("{$this -> host}/api/shares/", $headers, $share);
-    if ($req -> status_code == 200) {
-      return json_decode($req -> body, true);
-    }
-    $this -> errorResponse($req);
+    $pathname = "/api/shares/";
+    return $this -> requestJSON($pathname, Requests::POST, $share);
   }
 
   function create_share_history($name, $score, $summary) {
@@ -26,15 +22,8 @@ class BaseShare extends Gateway {
       "score"   => ceil($score),
       "summary" => $summary,
     ];
-
-    $params = array_copy($hist);
-    $params["sign_path"] = "/api/shares/{$name}/hists/";
-    $headers = $this -> get_headers(true, $params);
-    $req = Requests::post("{$this -> host}/api/shares/{$name}/hists/", $headers, $hist);
-    if ($req -> status_code == 200) {
-      return json_decode($req -> body, true);
-    }
-    $this -> errorResponse($req);
+    $pathname = "/api/shares/{$name}/hists/";
+    return $this -> requestJSON($pathname, Requests::POST, $hist);
   }
 
   function save_config($key, $value) {
@@ -42,98 +31,48 @@ class BaseShare extends Gateway {
     $config = [
       "value"   => $value,
     ];
-
-    $params = [
-      "value"   => $value,
-      "sign_path" => "/api/config/{$key}/",
-    ];
-    $headers = $this -> get_headers(true, $params);
-    $req = Requests::post("{$this -> host}/api/config/{$key}/", $headers, $config);
-    if ($req -> status_code == 200) {
-      return json_decode($req -> body, true);
-    }
-    $this -> errorResponse($req);
+    $pathname = "/api/config/{$key}/";
+    return $this -> requestJSON($pathname, Requests::POST, $config);
   }
 
   function get_config($key) {
     $this -> valid($key);
-    $params = [
-      "sign_path" => "/api/config/{$key}/",
-    ];
-    $headers = $this -> get_headers(true, $params);
-    $req = Requests::get("{$this -> host}/api/config/{$key}/", $headers);
-    if ($req -> status_code == 200) {
-      $rsp = json_decode($req -> body, true);
-      return $rsp['value'];
-    }
-    $this -> errorResponse($req);
+    $pathname = "/api/config/{$key}/";
+    return $this -> requestJSON($pathname, Requests::GET, $config);
   }
 
   function get_share($name) {
     $this -> valid($name);
-    $params = [
-      "sign_path" => "/api/shares/{$name}/",
-    ];
-    $headers = $this -> get_headers(true, $params);
-    $req = Requests::get("{$this -> host}/api/shares/{$name}/", $headers);
-    if ($req -> status_code == 200) {
-      return json_decode($req -> body, true);
-    }
-    $this -> errorResponse($req);
+    $pathname = "/api/shares/{$name}/";
+    return $this -> requestJSON($pathname, Requests::GET, $config);
   }
 
   function get_share_childs($name, $from = 0, $size = 10) {
     $this -> valid($name);
-    $headers = $this -> get_headers(true, ['from' => $from, 'size' => $size,
-        "sign_path" => "/api/shares/{$name}/childs/"]);
-    $req = Requests::get("{$this -> host}/api/shares/{$name}/childs/?from={$from}&size={$size}", $headers);
-    if ($req -> status_code == 200) {
-      return json_decode($req -> body, true);
-    }
-    $this -> errorResponse($req);
+    $pathname = "/api/shares/{$name}/childs/";
+    return $this -> requestJSON($pathname, Requests::GET, ["from" => $from, "size" => $size]);
   }
 
   function get_share_hists($name, $from = 0, $size = 10) {
     $this -> valid($name);
-    $headers = $this -> get_headers(true, ['from' => $from, 'size' => $size,
-        "sign_path" => "/api/shares/{$name}/hists/"]);
-    $req = Requests::get("{$this -> host}/api/shares/{$name}/hists/?from={$from}&size={$size}", $headers);
-    if ($req -> status_code == 200) {
-      return json_decode($req -> body, true);
-    }
-    $this -> errorResponse($req);
+    $pathname = "/api/shares/{$name}/hists/";
+    return $this -> requestJSON($pathname, Requests::GET, ["from" => $from, "size" => $size]);
   }
 
   function get_share_patch($name, $start_time = 0, $end_time = 0) {
     $this -> valid($name);
-    $headers = $this -> get_headers(true, ['start_time' => $start_time, 'end_time' => $end_time,
-        "sign_path" => "/api/shares/{$name}/patch/"]);
-    $req = Requests::get("{$this -> host}/api/shares/{$name}/patch/?start_time={$start_time}&end_time={$end_time}", $headers);
-    if ($req -> status_code == 200) {
-      return json_decode($req -> body, true);
-    }
-    $this -> errorResponse($req);
+    $pathname = "/api/shares/{$name}/patch/";
+    return $this -> requestJSON($pathname, Requests::GET, ["start_time" => $start_time, "end_time" => $end_time]);
   }
 
   function get_share_list($from = 0, $size = 10) {
-    $headers = $this -> get_headers(true, ['from' => $from, 'size' => $size,
-        "sign_path" => "/api/shares/"]);
-    $req = Requests::get("{$this -> host}/api/shares/?from={$from}&size={$size}", $headers);
-    if ($req -> status_code == 200) {
-      return json_decode($req -> body, true);
-    }
-    $this -> errorResponse($req);
+    $pathname = "/api/shares/{$name}/";
+    return $this -> requestJSON($pathname, Requests::GET, ["from" => $from, "size" => $size]);
   }
 
   function get_statistic_share_history($start_time, $end_time, $from = 0, $size = 10) {
-    $headers = $this -> get_headers(true, ['start_time' => $start_time
-      , 'end_time' => $end_time, 'from' => $from, 'size' => $size,
-        "sign_path" => "/api/statistic/"]);
-    $req = Requests::get("{$this -> host}/api/statistic/?from={$from}&size={$size}&start_time={$start_time}&end_time={$end_time}", $headers);
-    if ($req -> status_code == 200) {
-      return json_decode($req -> body, true);
-    }
-    $this -> errorResponse($req);
+    $pathname = "/api/statistic/";
+    return $this -> requestJSON($pathname, Requests::GET, ["start_time" => $start_time, "end_time" => $end_time, "from" => $from, "size" => $size]);
   }
 }
 
