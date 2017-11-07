@@ -76,7 +76,12 @@ class Gateway {
   protected function requestJSON($pathname, $method=Requests::GET, $data=null) {
     $req = $this -> request($pathname, $method, $data);
     if ($req -> status_code == 200) {
-      return json_decode($req -> body, true);
+      $rsp = json_decode($req -> body, true);
+      $keys = array_keys($rsp);
+      if (count($keys) == 1) {
+        return $rsp[$keys[0]];
+      }
+      return $rsp;
     }
     $this -> errorResponse($req);
   }
