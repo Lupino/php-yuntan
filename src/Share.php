@@ -38,13 +38,13 @@ class BaseShare extends Gateway {
   function get_config($key) {
     $this -> valid($key);
     $pathname = "/api/config/{$key}/";
-    return $this -> requestJSON($pathname, Requests::GET, $config);
+    return $this -> requestJSON($pathname, Requests::GET);
   }
 
   function get_share($name) {
     $this -> valid($name);
     $pathname = "/api/shares/{$name}/";
-    return $this -> requestJSON($pathname, Requests::GET, $config);
+    return $this -> requestJSON($pathname, Requests::GET);
   }
 
   function get_share_childs($name, $from = 0, $size = 10) {
