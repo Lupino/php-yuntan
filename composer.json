@@ -1,0 +1,17 @@
+{
+    "name": "yuntan/service",
+    "authors": [
+        {
+            "name": "Lupino",
+            "email": "lmjubuntu@gmail.com"
+        }
+    ],
+    "require": {
+        "rmccue/requests": ">=1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Yuntan\\Service\\": "src/"
+        }
+    }
+}
